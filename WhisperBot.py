@@ -9,7 +9,7 @@
 import logging, sys
 
 from faster_whisper import WhisperModel
-from telegram import Chat, ForceReply, Update
+from telegram import Chat, ForceReply, Message, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 # Enable logging
@@ -33,18 +33,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Bot made by DD3Boh."
     );
 
-async def transcribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def transcribe_work(msg: Message, user_msg: Message) -> None:
     text = ""
     fileName = "audiofile"
 
-    if (update.effective_chat.type != Chat.PRIVATE):
-        return
-
-    msg = await update.message.reply_text("Downloading...\n")
-
-    new_file = await update.message.effective_attachment.get_file()
-    await new_file.download_to_drive(fileName)
-
+    audio_file = await user_msg.effective_attachment.get_file()
+    await audio_file.download_to_drive(fileName)
     await msg.edit_text("Transcribing audio...\n")
 
     segments, info = model.transcribe(fileName, beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
@@ -53,12 +47,28 @@ async def transcribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         text += segment.text
         await msg.edit_text(text)
 
+async def transcribe_private(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if (update.effective_chat.type != Chat.PRIVATE):
+        return
+
+    user_msg = update.message
+    msg = await update.message.reply_text("Downloading...\n", reply_to_message_id=user_msg.id)
+
+    await transcribe_work(msg, user_msg)
+
+async def transcribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    user_msg = update.message.reply_to_message
+    msg = await update.message.reply_text("Downloading...\n", reply_to_message_id=user_msg.id)
+
+    await transcribe_work(msg, user_msg)
+
 def main() -> None:
     application = Application.builder().token(sys.argv[1]).build()
 
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("transcribe", transcribe_command))
 
-    application.add_handler(MessageHandler(filters.AUDIO | filters.VIDEO_NOTE | filters.VOICE & ~filters.COMMAND, transcribe))
+    application.add_handler(MessageHandler(filters.AUDIO | filters.VIDEO_NOTE | filters.VOICE & ~filters.COMMAND, transcribe_private))
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
