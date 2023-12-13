@@ -35,9 +35,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def transcribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = ""
-    msg = await update.message.reply_text("Transcribing audio...\n")
+    fileName = "audiofile"
 
-    segments, info = model.transcribe("<AUDIO_PATH>", beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
+    msg = await update.message.reply_text("Downloading...\n")
+
+    new_file = await update.message.effective_attachment.get_file()
+    await new_file.download_to_drive(fileName)
+
+    await msg.edit_text("Transcribing audio...\n")
+
+    segments, info = model.transcribe(fileName, beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
 
     for segment in segments:
         text += segment.text
@@ -47,6 +54,8 @@ def main() -> None:
     application = Application.builder().token(sys.argv[1]).build()
 
     application.add_handler(CommandHandler("start", start))
+
+    application.add_handler(MessageHandler(filters.AUDIO | filters.VIDEO_NOTE | filters.VOICE & ~filters.COMMAND, transcribe))
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
