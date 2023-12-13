@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+#
+#  SPDX-FileCopyrightText 2023 Davide Garberi <dade.garberi@gmail.com>
+#
+#  SPDX-License-Identifier: GPL-3.0-or-later
+#
+
 import logging
 
 from telegram import ForceReply, Update
