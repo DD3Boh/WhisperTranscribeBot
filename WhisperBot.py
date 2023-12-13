@@ -6,7 +6,7 @@
 #  SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-import logging
+import logging, sys
 
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
@@ -21,7 +21,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 def main() -> None:
-    application = Application.builder().token("TOKEN").build()
+    application = Application.builder().token(sys.argv[1]).build()
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
