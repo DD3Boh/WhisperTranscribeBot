@@ -9,7 +9,7 @@
 import logging, sys
 
 from faster_whisper import WhisperModel
-from telegram import ForceReply, Update
+from telegram import Chat, ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 # Enable logging
@@ -36,6 +36,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def transcribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = ""
     fileName = "audiofile"
+
+    if (update.effective_chat.type != Chat.PRIVATE):
+        return
 
     msg = await update.message.reply_text("Downloading...\n")
 
