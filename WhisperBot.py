@@ -8,6 +8,7 @@
 
 import logging, sys
 
+from faster_whisper import WhisperModel
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
@@ -20,6 +21,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
+model_size = "medium"
+model = WhisperModel(model_size, device="cpu", compute_type="int8")
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Welcome to the Whisper Transcribe Bot!\n"
@@ -28,6 +32,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Type /help for a list of commands\n"
         "Bot made by DD3Boh."
     );
+
+async def transcribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    text = ""
+    msg = await update.message.reply_text("Transcribing audio...\n")
+
+    segments, info = model.transcribe("<AUDIO_PATH>", beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
+
+    for segment in segments:
+        text += segment.text
+        await msg.edit_text(text)
 
 def main() -> None:
     application = Application.builder().token(sys.argv[1]).build()
