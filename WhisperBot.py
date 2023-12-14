@@ -6,7 +6,7 @@
 #  SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-import logging, sys
+import logging, sys, io
 
 from faster_whisper import WhisperModel
 from telegram import Chat, ForceReply, Message, Update
@@ -35,13 +35,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def transcribe_work(msg: Message, user_msg: Message) -> None:
     text = ""
-    fileName = "audiofile"
 
     audio_file = await user_msg.effective_attachment.get_file()
-    await audio_file.download_to_drive(fileName)
+    buf = io.BytesIO()
+    await audio_file.download_to_memory(buf)
+    buf.seek(0)
+
     await msg.edit_text("Transcribing audio...\n")
 
-    segments, info = model.transcribe(fileName, beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
+    segments, info = model.transcribe(buf, beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
 
     for segment in segments:
         text += segment.text
