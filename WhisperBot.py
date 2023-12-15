@@ -23,7 +23,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 model_size = "medium"
-model = WhisperModel(model_size, device="cpu", compute_type="int8")
+model = WhisperModel(model_size, device="cpu", compute_type="auto")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
