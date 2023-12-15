@@ -7,6 +7,7 @@
 #
 
 import logging, sys, io
+import telegram.error
 
 from faster_whisper import WhisperModel
 from telegram import Chat, ForceReply, Message, Update
@@ -47,7 +48,14 @@ async def transcribe_work(msg: Message, user_msg: Message) -> None:
 
     for segment in segments:
         text += segment.text
-        await msg.edit_text(text)
+        try:
+            await msg.edit_text(text)
+        except telegram.error.BadRequest as e:
+            if str(e) == "Message_too_long":
+                text = segment.text
+                msg = await msg.reply_text(text, quote=True)
+            else:
+                raise e
 
 async def transcribe_private(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if (update.effective_chat.type != Chat.PRIVATE):
