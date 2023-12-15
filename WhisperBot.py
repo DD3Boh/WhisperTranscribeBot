@@ -34,8 +34,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Bot made by DD3Boh."
     );
 
-async def transcribe_work(msg: Message, user_msg: Message) -> None:
+async def transcribe_work(user_msg: Message) -> None:
     text = ""
+
+    msg = await user_msg.reply_text("Downloading...\n", quote=True)
 
     audio_file = await user_msg.effective_attachment.get_file()
     buf = io.BytesIO()
@@ -62,15 +64,13 @@ async def transcribe_private(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
     user_msg = update.message
-    msg = await update.message.reply_text("Downloading...\n", reply_to_message_id=user_msg.id)
 
-    await transcribe_work(msg, user_msg)
+    await transcribe_work(user_msg)
 
 async def transcribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_msg = update.message.reply_to_message
-    msg = await update.message.reply_text("Downloading...\n", reply_to_message_id=user_msg.id)
 
-    await transcribe_work(msg, user_msg)
+    await transcribe_work(user_msg)
 
 def main() -> None:
     application = Application.builder().token(sys.argv[1]).build()
