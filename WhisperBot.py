@@ -87,7 +87,7 @@ def main() -> None:
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("transcribe", transcribe_command))
 
-    application.add_handler(MessageHandler(filters.AUDIO | filters.VIDEO_NOTE | filters.VOICE & ~filters.COMMAND, transcribe_private))
+    application.add_handler(MessageHandler(filters.AUDIO | filters.VIDEO_NOTE | filters.VOICE, transcribe_private))
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
