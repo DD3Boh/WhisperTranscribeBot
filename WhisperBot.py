@@ -23,7 +23,16 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 model_size = "medium"
-model = WhisperModel(model_size, device="auto", compute_type="auto")
+
+base = WhisperModel("base", device="auto", compute_type="auto")
+small = WhisperModel("small", device="auto", compute_type="auto")
+medium = WhisperModel("medium", device="auto", compute_type="auto")
+
+model_dict = {
+    "base": base,
+    "small": small,
+    "medium": medium,
+}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
@@ -46,7 +55,7 @@ async def transcribe_work(user_msg: Message) -> None:
 
     await msg.edit_text("Transcribing audio...\n")
 
-    segments, info = model.transcribe(buf, beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
+    segments, info = model_dict.get(model_size).transcribe(buf, beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
 
     for segment in segments:
         text += segment.text
