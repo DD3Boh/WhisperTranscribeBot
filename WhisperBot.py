@@ -73,7 +73,7 @@ async def transcribe_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await transcribe_work(user_msg)
 
 def main() -> None:
-    application = Application.builder().token(sys.argv[1]).build()
+    application = Application.builder().token(sys.argv[1]).read_timeout(10).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("transcribe", transcribe_command))
