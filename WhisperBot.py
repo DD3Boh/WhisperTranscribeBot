@@ -6,12 +6,13 @@
 #  SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-import logging, sys, io
+import logging, sys, io, time
 import telegram.error
 import nest_asyncio
 
 from faster_whisper import WhisperModel
 from telegram import Chat, ForceReply, Message, Update
+from telegram.constants import FloodLimit, MessageLimit
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 # Enable logging
@@ -46,8 +47,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Bot made by DD3Boh."
     );
 
+async def update_transcription(buf: io.BytesIO):
+    texts = [""]; i = 0; prev = 0.0
+    interval = (90 / FloodLimit.MESSAGES_PER_MINUTE_PER_GROUP)
+    segments, info = model_dict.get(model_size).transcribe(buf, beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
+
+    for segment in segments:
+        if (len(texts[i] + segment.text) < MessageLimit.MAX_TEXT_LENGTH):
+            texts[i] += segment.text
+        else:
+            i += 1
+            texts.insert(i, segment.text)
+
+        while (time.time() - prev >= interval):
+            prev = time.time()
+            yield texts
+    else:
+        yield texts
+
 async def transcribe_work(user_msg: Message) -> None:
-    text = ""
+    text = ""; k = 0
 
     msg = await user_msg.reply_text("Downloading...\n", quote=True)
 
@@ -58,18 +77,13 @@ async def transcribe_work(user_msg: Message) -> None:
 
     await msg.edit_text("Transcribing audio...\n")
 
-    segments, info = model_dict.get(model_size).transcribe(buf, beam_size=1, initial_prompt="Transcribe audio, with proper punctuation.")
-
-    for segment in segments:
-        text += segment.text
-        try:
-            await msg.edit_text(text)
-        except telegram.error.BadRequest as e:
-            if str(e) == "Message_too_long":
-                text = segment.text
-                msg = await msg.reply_text(text, quote=True)
+    async for texts in update_transcription(buf):
+        for i in range(len(texts)):
+            if i > k:
+                msg = await msg.reply_text(texts[i], quote=True)
+                k = i
             else:
-                raise e
+                await msg.edit_text(texts[i])
 
 async def transcribe_private(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if (update.effective_chat.type != Chat.PRIVATE):
