@@ -8,6 +8,7 @@
 
 import logging, sys, io
 import telegram.error
+import nest_asyncio
 
 from faster_whisper import WhisperModel
 from telegram import Chat, ForceReply, Message, Update
@@ -21,6 +22,8 @@ logging.basicConfig(
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
+
+nest_asyncio.apply()
 
 model_size = "medium"
 
